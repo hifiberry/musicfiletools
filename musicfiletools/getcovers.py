@@ -157,16 +157,25 @@ def processDirectory(directory, depth=30):
 
 
 if __name__ == '__main__':
+    
+    directory="."
+    
     if len(sys.argv) > 1:
         if "-v" in sys.argv:
             logging.basicConfig(format='%(levelname)s: %(name)s - %(message)s',
                                 level=logging.DEBUG)
             logging.debug("enabled verbose logging")
+            
+        for a in sys.argv:
+            if Path(a).is_dir():
+                directory=a
+            
     else:
         logging.basicConfig(format='%(levelname)s: %(name)s - %(message)s',
                             level=logging.INFO)
-
-    processDirectory("Z:/65daysofstatic", 4)
-    processDirectory("Z:/", 4)
+        
+    p=Path(directory).absolute()
+    logging.info("Extracting covers from %s",p)
+    processDirectory(p)
     
     logging.info("Stats: %s", stats)
