@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 '''
 Copyright (c) 2020 Modul 9/HiFiBerry
 
@@ -151,6 +153,7 @@ def processDirectory(directory, depth=30):
             logging.debug("no cover found")
             if extractCoverFromFiles(p):
                 stats["coversExtracted"]=stats.get("coversExtracted",0)+1
+                logging.info("got cover for %s",p)
                 
         else:
             logging.debug("cover: %s", c)
@@ -159,6 +162,9 @@ def processDirectory(directory, depth=30):
 if __name__ == '__main__':
     
     directory="."
+    
+    logging.basicConfig(format='%(levelname)s: %(name)s - %(message)s',
+                        level=logging.INFO)
     
     if len(sys.argv) > 1:
         if "-v" in sys.argv:
@@ -169,11 +175,7 @@ if __name__ == '__main__':
         for a in sys.argv:
             if Path(a).is_dir():
                 directory=a
-            
-    else:
-        logging.basicConfig(format='%(levelname)s: %(name)s - %(message)s',
-                            level=logging.INFO)
-        
+                    
     p=Path(directory).absolute()
     logging.info("Extracting covers from %s",p)
     processDirectory(p)
