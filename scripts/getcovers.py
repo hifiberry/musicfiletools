@@ -123,9 +123,11 @@ def extract_cover_from_files(directory):
         if f.suffix.lower() in MUSICEXT:
             try:
                 
-                if f in processed:
-                    logging.debug("processed %s already")
+                if fileid(f) in processed:
+                    logging.debug("processed %s already",f)
                     continue
+                else:
+                    logging.debug("processing %s",f)
                 
                 songfile = mutagen.File(f)
                 coverFound=False
@@ -182,7 +184,7 @@ def process_directory(directory, depth=30):
                 process_directory(d, depth-1)
                 
     if has_music(p):
-        logging.debug("found music in %s",p)
+        logging.info("%s",p)
         
         c = cover(p)
         if c is None:
@@ -226,7 +228,8 @@ if __name__ == '__main__':
             with open(processedFile) as json_file:
                 processed = json.load(json_file)
                 logging.info("loaded processed files from %s",processedFile)
-        except:
+        except Exception as e:
+            logging.warning(e)
             processed = {}
             
     
