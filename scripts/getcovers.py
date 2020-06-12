@@ -25,6 +25,7 @@ SOFTWARE.
 import sys
 import logging
 from pathlib import Path
+import json
 
 import mutagen
 from mutagen.id3 import PictureType
@@ -33,6 +34,8 @@ from mutagen.mp4 import AtomDataType
 from musicfiletools.config import MUSICEXT
 
 stats = {}
+
+processed = {}
 
 
 def cover(directory):
@@ -43,6 +46,10 @@ def cover(directory):
                 return f
     
     return None
+
+def fileid(path):
+    # use path/mtime combination as a unique id for a patch
+    return "{}/{}".format(path.resolve(),path.stat().st_mtime)
 
 
 def apic_to_file(apic, directory, filebase="cover"):
@@ -109,33 +116,43 @@ def album_data(mutagenFile):
     
 
 def extract_cover_from_files(directory):
+    global processed
+    
     p = Path(directory)
     for f in p.glob("*.???*"):
         if f.suffix.lower() in MUSICEXT:
             try:
+                
+                if f in processed:
+                    logging.debug("processed %s already")
+                    continue
+                
                 songfile = mutagen.File(f)
+                coverFound=False
                 logging.debug(" %s", songfile.keys())
                 
                 if "APIC:" in songfile.keys():
                     apic = songfile.get("APIC:")
-                    if apic_to_file(apic, p):
-                        return True
+                    coverFound=apic_to_file(apic, p)
                     
                 if "covr" in songfile.keys():
                     cover = songfile.get("covr")[0]
-                    if covr_to_file(cover, p):
-                        return True
+                    coverFound=covr_to_file(cover, p)
                     
                 try:
                     pic = songfile.pictures[0]
-                    if picture_to_file(pic, p):
-                        return True                
+                    coverFound=picture_to_file(pic, p)
                 except:
                     # This is normal as this will only work
                     # with FLAC files
                     pass
+
+                processed[fileid(f)]=1
                 
-                logging.info("data: %s ",album_data(songfile))
+                if coverFound:
+                    return True
+                    
+                ## logging.info("data: %s ",album_data(songfile))
                     
             except Exception as _e:
                 logging.warning("can't handle %s", f)
@@ -202,7 +219,26 @@ if __name__ == '__main__':
                         level=logging.INFO)
                     
     p=Path(directory).absolute()
+    
+    processedFile=Path(p,"getcovers.log")
+    if processedFile.exists():
+        try:
+            with open(processedFile) as json_file:
+                processed = json.load(json_file)
+                logging.info("loaded processed files from %s",processedFile)
+        except:
+            processed = {}
+            
+    
     logging.info("Extracting covers from %s",p)
     process_directory(p)
+    
+    try:
+        with open(processedFile, 'w') as outfile:
+            json.dump(processed, outfile)
+            logging.info("saved processed files to %s",processedFile)
+    except:
+        processed = {}
+            
     
     logging.info("Stats: %s", stats)
