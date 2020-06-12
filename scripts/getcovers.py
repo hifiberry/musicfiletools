@@ -177,11 +177,7 @@ def process_directory(directory, depth=30):
         else:
             logging.debug("cover: %s", c)
             
-        albumjson=Path(p,"album.json")
-        try:
-            with open(albumjson) as json_file:
-                albumdata = json.load(json_file)
-                
+    
 
 
 if __name__ == '__main__':
