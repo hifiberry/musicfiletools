@@ -86,7 +86,7 @@ def covr_to_file(covr, directory, filebase="cover"):
 
 def picture_to_file(picture, directory, filebase="cover"):
     coverfile = None
-    if picture.mime.lower() == "image/jpeg":
+    if picture.mime.lower() == "image/jpeg" or picture.mime.lower() == "image/jpg":
         coverfile = Path(directory, filebase+".jpg")
     elif picture.mime.lower() == "image/png":
         coverfile = Path(directory, filebase+".png")
