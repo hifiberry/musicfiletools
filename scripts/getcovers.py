@@ -55,7 +55,7 @@ def fileid(path):
 def apic_to_file(apic, directory, filebase="cover"):
     if apic.type in [PictureType.COVER_FRONT, PictureType.OTHER]: 
         cover = None
-        if apic.mime.lower()=="image/jpeg":
+        if apic.mime.lower() in ["image/jpeg", "image/jpg"]:
             cover = Path(directory, filebase+".jpg")
         elif apic.mime.lower() == "image/png":
             cover = Path(directory, filebase+".png")
