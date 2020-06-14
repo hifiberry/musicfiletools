@@ -79,5 +79,5 @@ if __name__ == '__main__':
                 
     p=Path(directory).absolute()
     logging.info("Extracting album information from %s",p)
-    process_directory(p)
+    process_directory(p, update_music_files=update_music_files)
     
