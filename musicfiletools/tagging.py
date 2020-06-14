@@ -92,7 +92,6 @@ def fix_tags(data):
 def update_tags(filename, updatedict, ignore_errors=True):
     try:
         mgfile = mutagen.File(filename)
-        print(mgfile)
         t = type(mgfile)
         if t == mutagen.mp3.MP3:
             update_mp3_tags(mgfile, updatedict)
