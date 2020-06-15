@@ -175,13 +175,15 @@ def has_music(directory):
 def process_directory(directory, depth=30):
     
     global stats
+    found = False
     
     p = Path(directory)
     
     if depth>0:
         for d in p.glob("*"):
             if d.is_dir():
-                process_directory(d, depth-1)
+                if process_directory(d, depth-1):
+                    found = True 
                 
     if has_music(p):
         logging.info("%s",p)
@@ -191,18 +193,20 @@ def process_directory(directory, depth=30):
             logging.debug("no cover found")
             if extract_cover_from_files(p):
                 stats["coversExtracted"]=stats.get("coversExtracted",0)+1
+                found = True
                 logging.info("got cover for %s",p)
                 
         else:
             logging.debug("cover: %s", c)
             
+    return found
     
 
 
 if __name__ == '__main__':
     
     directory="."
-    
+    retcode=False
     loggingconf=False
     
     if len(sys.argv) > 1:
@@ -211,16 +215,21 @@ if __name__ == '__main__':
                                 level=logging.DEBUG)
             loggingconf=True
             logging.info("enabled verbose logging")
-            
-        for a in sys.argv:
-            if Path(a).is_dir():
-                directory=a
-                
-    if not(loggingconf):
+            sys.argv.remove("-v")
+        else:
             logging.basicConfig(format='%(levelname)s: %(name)s - %(message)s',
                         level=logging.INFO)
-                    
-    p=Path(directory).absolute()
+            
+        if "-x" in sys.argv:
+            logging.info("return code 0 only if new covers were found")
+            retcode=True
+            sys.argv.remove("-x")
+    else:
+        print("command line arguments missing")
+        sys.exit(1)
+            
+            
+    p=Path(sys.argv[1]).absolute()
     
     processedFile=Path(p,"getcovers.log")
     if processedFile.exists():
@@ -231,10 +240,9 @@ if __name__ == '__main__':
         except Exception as e:
             logging.warning(e)
             processed = {}
-            
     
     logging.info("Extracting covers from %s",p)
-    process_directory(p)
+    found = process_directory(p)
     
     try:
         with open(processedFile, 'w') as outfile:
@@ -245,3 +253,9 @@ if __name__ == '__main__':
             
     
     logging.info("Stats: %s", stats)
+    
+    # if "-x" is set, return with code 0 only if covers are found
+    if retcode and not(found):
+        sys.exit(1)
+    
+    
