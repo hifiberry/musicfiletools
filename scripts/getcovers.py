@@ -26,6 +26,7 @@ import sys
 import logging
 from pathlib import Path
 import json
+import subprocess
 
 import mutagen
 from mutagen.id3 import PictureType
@@ -40,12 +41,16 @@ processed = {}
 
 def cover(directory):
     p = Path(directory)
+    ct = Path(directory, "cover-thumb.jpg")
+    if not(ct.exists()):
+        ct = None
+        
     for f in p.glob("*.???*"):
         if f.suffix in [".jpg",".jpeg",".png"]:
             if f.stem.lower() in ["folder", "front", "albumart","cover"]:
-                return f
-    
-    return None
+                return f, ct
+                
+    return None, ct
 
 def fileid(path):
     # use path/mtime combination as a unique id for a patch
@@ -113,6 +118,11 @@ def album_data(mutagenFile):
         md["albumartist"]=mutagenFile.get("TPE1")
     
     return md
+
+def create_cover_thumb(cover):
+    cf = Path(cover)
+    thumbfile = Path(cf.parents[0],"cover-thumb.jpg")
+    subprocess.run(["convert", str(cover), "-resize", "400x400>", "-quality", "70%", str(thumbfile)])
     
 
 def extract_cover_from_files(directory):
@@ -188,14 +198,19 @@ def process_directory(directory, depth=30):
     if has_music(p):
         logging.info("%s",p)
         
-        c = cover(p)
+        c,c_thumb = cover(p)
         if c is None:
             logging.debug("no cover found")
             if extract_cover_from_files(p):
                 stats["coversExtracted"]=stats.get("coversExtracted",0)+1
                 found = True
+                c,c_thumb = cover(p)
                 logging.info("got cover for %s",p)
                 
+        if c_thumb is None and c is not None:
+            logging.info("creating thumbnail for %s", c)
+            create_cover_thumb(c)
+            found=True
         else:
             logging.debug("cover: %s", c)
             
