@@ -23,5 +23,5 @@ setup(name='musicfiletools',
       packages=find_packages(),
       install_requires=['mutagen'],
       keywords='mp3, m4a, flac, metadata, cover',
-      scripts=['scripts/getcovers.py' ],
+      scripts=['scripts/getcovers.py','scripts/getalbums.py','scripts/getartists.py' ],
       zip_safe=False)
