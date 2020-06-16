@@ -32,9 +32,19 @@ import cv2
 
 
 def process_directory(directory, update_music_files=False):
+
+    dirs = ["/usr/share/OpenCV/haarcascades"]
+    try:
+        dirs.append(cv2.data.haarcascades)
+    except:
+        pass
     
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    if (face_cascade.empty()):
+    for d in dirs:
+        face_cascade = cv2.CascadeClassifier(d + '/haarcascade_frontalface_default.xml')
+        if not(face_cascade.empty()):
+            break
+        
+    if face_cascade.empty():
         logging.error("couldn't load face cascade")
         return
     
@@ -60,10 +70,17 @@ def process_directory(directory, update_music_files=False):
             logging.info(faces)
             
             # Write to JSON
+            res = []
+            for f in faces:
+                res.append({"x":int(f[0]),
+                            "y":int(f[1]),
+                            "width":int(f[2]),
+                            "height":int(f[3])})
+            
             try:
                 with open(facesfile, 'w') as outfile:
-                    json.dump({"faces":faces}, outfile)
-            except:
+                    json.dump({"faces":res}, outfile)
+            except Exception as _e:
                 logging.error("couldn't write to %s",facesfile)
             
 
