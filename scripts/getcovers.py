@@ -46,7 +46,7 @@ def cover(directory):
         ct = None
         
     for f in p.glob("*.???*"):
-        if f.suffix in [".jpg",".jpeg",".png"]:
+        if f.suffix in [".jpg",".jpeg",".png",".gif"]:
             if f.stem.lower() in ["folder", "front", "albumart","cover"]:
                 return f, ct
                 
@@ -64,6 +64,8 @@ def apic_to_file(apic, directory, filebase="cover"):
             cover = Path(directory, filebase+".jpg")
         elif apic.mime.lower() == "image/png":
             cover = Path(directory, filebase+".png")
+        elif apic.mime.lower() == "image/gif":
+            cover = Path(directory, filebase+".gif")
         
         if cover is not None:
             with cover.open("wb") as f:
@@ -79,6 +81,8 @@ def covr_to_file(covr, directory, filebase="cover"):
         coverfile = Path(directory, filebase+".jpg")
     elif covr.imageformat == AtomDataType.PNG:
         coverfile = Path(directory, filebase+".png")
+    elif covr.imageformat == AtomDataType.GIF:
+        coverfile = Path(directory, filebase+".gif")
         
     if coverfile is not None:
         with coverfile.open("wb") as f:
@@ -95,6 +99,8 @@ def picture_to_file(picture, directory, filebase="cover"):
         coverfile = Path(directory, filebase+".jpg")
     elif picture.mime.lower() == "image/png":
         coverfile = Path(directory, filebase+".png")
+    elif picture.mime.lower() == "image/gif":
+        coverfile = Path(directory, filebase+".gif")
         
     if coverfile is not None:
         with coverfile.open("wb") as f:
@@ -119,10 +125,16 @@ def album_data(mutagenFile):
     
     return md
 
+
 def create_cover_thumb(cover):
     cf = Path(cover)
     thumbfile = Path(cf.parents[0],"cover-thumb.jpg")
     subprocess.run(["convert", str(cover), "-resize", "400x400>", "-quality", "70%", str(thumbfile)])
+    
+    if not(str(cover).endswith("over.jpg")):
+        coverfile = Path(cf.parents[0],"cover.jpg")
+        subprocess.run(["convert", str(cover), "-resize", "1000x1000>", "-quality", "70%", str(coverfile)])
+           
     
 
 def extract_cover_from_files(directory):
@@ -143,9 +155,10 @@ def extract_cover_from_files(directory):
                 coverFound=False
                 logging.debug(" %s", songfile.keys())
                 
-                if "APIC:" in songfile.keys():
-                    apic = songfile.get("APIC:")
-                    coverFound=apic_to_file(apic, p)
+                for k in songfile.keys():
+                    if k.startswith("APIC:"):
+                        apic = songfile.get(k)
+                        coverFound=apic_to_file(apic, p)
                     
                 if "covr" in songfile.keys():
                     cover = songfile.get("covr")[0]
@@ -223,6 +236,7 @@ if __name__ == '__main__':
     directory="."
     retcode=False
     loggingconf=False
+    ignoreGetCovers=False
     
     if len(sys.argv) > 1:
         if "-v" in sys.argv:
@@ -239,6 +253,13 @@ if __name__ == '__main__':
             logging.info("return code 0 only if new covers were found")
             retcode=True
             sys.argv.remove("-x")
+            
+        if "-i" in sys.argv:
+            logging.info("ignoring getcovers.log")
+            ignoreGetCovers=True
+            sys.argv.remove("-i")
+            
+            
     else:
         print("command line arguments missing")
         sys.exit(1)
@@ -246,8 +267,9 @@ if __name__ == '__main__':
             
     p=Path(sys.argv[1]).absolute()
     
+    
     processedFile=Path(p,"getcovers.log")
-    if processedFile.exists():
+    if processedFile.exists() and not ignoreGetCovers:
         try:
             with open(processedFile) as json_file:
                 processed = json.load(json_file)
