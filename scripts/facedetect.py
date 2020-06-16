@@ -67,18 +67,44 @@ def process_directory(directory, update_music_files=False):
 
             # Detect faces
             faces = face_cascade.detectMultiScale(img, 1.1, 4)
-            logging.info(faces)
             
             # Write to JSON
-            res = []
+            fl = []
+            minx=100000
+            miny=100000
+            maxx=0
+            maxy=0
             for f in faces:
-                res.append({"x":int(f[0]),
-                            "y":int(f[1]),
-                            "width":int(f[2]),
-                            "height":int(f[3])})
+                x1=int(f[0])
+                y1=int(f[1])
+                x2=x1+int(f[2])
+                y2=y1+int(f[3])
+                
+                if x1<minx:
+                    minx=x1
+                if x2>maxx:
+                    maxx=x2
+                if y1<miny:
+                    miny=y1
+                if y2>maxy:
+                    maxy=y2
+                
+                fl.append({"x1":x1,
+                            "y1":y1,
+                            "x2":x2,
+                            "y2":y2})
             
             try:
                 with open(facesfile, 'w') as outfile:
+                    res={"faces":fl}
+                    if len(faces)>0:
+                        res["focalpoint"]={"x":minx+(maxx-minx)/2,
+                                           "y":miny+(maxy-miny)/2}
+                        res["bounds"]={"x1": minx,
+                                       "y1": miny,
+                                       "x2": maxx,
+                                       "y2": maxy }
+                        logging.debug("%s",res)
                     json.dump({"faces":res}, outfile)
             except Exception as _e:
                 logging.error("couldn't write to %s",facesfile)
