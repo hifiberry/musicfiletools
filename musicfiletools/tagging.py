@@ -263,6 +263,8 @@ def albumdata_from_dir(directory, use_only_json=False):
             fix_tags(data)
             if data is not None and data.get("album_mbid") is not None:
                 try:
+                    if data["date"] is not None:
+                        data["date"]=data["date"].strftime("%Y-%m-%d")
                     with open(Path(directory,"album.json"),"w") as json_file:
                         json.dump(data, json_file)
                 except:
