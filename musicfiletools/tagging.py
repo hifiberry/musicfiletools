@@ -183,6 +183,7 @@ def retrieve_album_data(data, overwrite=True):
         or data.get("albumArtist") is None:
         try:
             artists = []
+            
             for ac in album["artist-credit"]:
                 artists.append(ac["artist"]["name"])
             if len(artists)>0:
@@ -197,7 +198,10 @@ def retrieve_album_data(data, overwrite=True):
     if overwrite or data.get("album_mbid") is None:
         data["album_mbid"]=album.get("id")
         
-    # TODO: coverart
+    for ac in album["artist-credit"]:
+        artist_mbids = []
+        artist_mbids.append(ac["artist"]["id"])
+    data["artist_mbids"]=artist_mbids
         
         
 def albumdata_from_file(musicfile, use_artist_if_no_albumartist = False, lookup_online=True, overwrite=True):
@@ -221,7 +225,11 @@ def albumdata_from_file(musicfile, use_artist_if_no_albumartist = False, lookup_
     else:
         albumArtist=tags["albumArtist"]
                 
-    return {"albumArtist": albumArtist, "album": tags["album"], "date": tags.get("date"), "album_mbid": tags.get("album_mbid")}
+    return {"albumArtist": albumArtist, 
+            "album": tags["album"], 
+            "date": tags.get("date"), 
+            "album_mbid": tags.get("album_mbid"),
+            "artist_mbids": tags.get("artist_mbids")}
     
     
 def find_common(dict1, dict2):

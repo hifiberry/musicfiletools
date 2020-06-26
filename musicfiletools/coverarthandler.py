@@ -30,8 +30,8 @@ import io
 import struct
 import urllib.request as urllib2
 
-GOOD_ENOUGH_WIDTH = 1000
-GOOD_ENOUGH_HEIGHT = 1000
+GOOD_ENOUGH_WIDTH = 600
+GOOD_ENOUGH_HEIGHT = 600
 
 
 def get_image_info(data):

@@ -112,7 +112,7 @@ class CoverUpdater(Thread):
         cp = Path(self.directory,"cover"+extension)
         with open(cp,"wb") as coverfile:
             coverfile.write(data)
-            logging.info("created %s", cp)
+            logging.info("created %s (%sx%s)", cp, width, height)
                 
         return True
             

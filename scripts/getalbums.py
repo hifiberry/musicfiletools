@@ -25,16 +25,18 @@ import sys
 import logging
 from pathlib import Path
 import concurrent.futures
-import musicfiletools
-
-executor = concurrent.futures.ThreadPoolExecutor(max_workers=10)
-
 
 from musicfiletools import tagging
 from musicfiletools.coverupdater import CoverUpdater
+from musicfiletools.artistupdater import ArtistUpdater
 from musicfiletools.config import IGNOREDIRS
 
-def process_directory(directory, update_music_files=False):
+executor = concurrent.futures.ThreadPoolExecutor(max_workers=10)
+
+def process_directory(directory, 
+                      update_music_files=False, 
+                      get_covers=True,
+                      artist_directory=None):
     
     p = Path(directory)
     
@@ -45,10 +47,23 @@ def process_directory(directory, update_music_files=False):
             
             logging.info("processing %s",d)
             data = tagging.albumdata_from_dir(d)
-            if data is not None and "mbid" in data:
-                cu = CoverUpdater(data["mbid"],d)
-                executor.submit(cu.run)
-                #cu.run()
+            if data is not None:
+                if get_covers and "album_mbid" in data:
+                    cu = CoverUpdater(data["album_mbid"],d)
+                    executor.submit(cu.run)
+                
+                if artist_directory is not None and "albumArtist" in data:
+                    try:
+                        mbid=data["artist_mbids"][0]
+                    except:
+                        mbid=None
+                        
+                    au=ArtistUpdater(name=data["albumArtist"],
+                                     mbid=mbid,
+                                     directory=artist_directory,
+                                     max_dim=500)
+                    executor.submit(au.run)
+                    
             if data != {} and update_music_files:
                 tagging.writeback_album_data(d, data)
             
@@ -58,6 +73,8 @@ if __name__ == '__main__':
     directory="."
     
     update_music_files = False
+    get_covers = False
+    artist_directory=None
     
     if len(sys.argv) > 1:
         if "-v" in sys.argv:
@@ -73,11 +90,22 @@ if __name__ == '__main__':
             logging.info("writing back album information to music files")
             update_music_files = True
             
+        if "-c" in sys.argv:
+            logging.info("retrieving covers from web services")
+            get_covers = True
+            
+        if "-a" in sys.argv:
+            logging.info("retrieving artist pictures from web services")
+            artist_directory="/data/library/artists"
+            
         for a in sys.argv:
             if Path(a).is_dir():
                 directory=a
                 
     p=Path(directory).absolute()
     logging.info("Extracting album information from %s",p)
-    process_directory(p, update_music_files=update_music_files)
+    process_directory(p, 
+                      update_music_files=update_music_files, 
+                      get_covers=get_covers,
+                      artist_directory=artist_directory)
     
