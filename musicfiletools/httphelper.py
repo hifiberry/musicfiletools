@@ -24,7 +24,6 @@ import logging
 
 from expiringdict import ExpiringDict
 import requests
-from geolite2 import geolite2
 
 from musicfiletools import __version__ as VERSION
 
@@ -32,8 +31,6 @@ cache = ExpiringDict(max_len=100,
                      max_age_seconds=600)
 negativeCache = ExpiringDict(max_len=100,
                              max_age_seconds=600)
-
-geoip_reader = geolite2.reader()
 
 def clear_cache():
     cache.clear()
