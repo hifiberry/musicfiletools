@@ -33,12 +33,13 @@ processing=set()
 
 class ArtistUpdater(Thread):
     
-    def __init__(self, name, mbid, directory, max_dim=1000):
+    def __init__(self, name, mbid, directory, max_dim=1000, update_notifier=None):
         super().__init__()
         self.name = name
         self.mbid = mbid
         self.directory = directory
         self.max_dim = max_dim
+        self.update_notifier = update_notifier
     
     def run(self):
         global processing
@@ -64,6 +65,8 @@ class ArtistUpdater(Thread):
                 try:
                     save_image(resp.content, self.max_dim, self.max_dim, artistfile)
                     logging.info("created %s", artistfile)
+                    if self.update_notifier is not None:
+                        self.update_notifier.notify_updated()
                     return True
                 except Exception as e:
                     logging.exception(e)

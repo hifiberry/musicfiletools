@@ -33,6 +33,20 @@ from musicfiletools.config import IGNOREDIRS
 
 executor = concurrent.futures.ThreadPoolExecutor(max_workers=10)
 
+class Notifier:
+    
+    def __init__(self):
+        self.notifies = 0
+        
+    def notify_updated(self):
+        self.notifies += 1
+        
+    def received_notifies(self):
+        return self.notifies > 0
+        
+notifier = Notifier()
+            
+
 def process_directory(directory, 
                       update_music_files=False, 
                       get_covers=True,
@@ -49,7 +63,9 @@ def process_directory(directory,
             data = tagging.albumdata_from_dir(d)
             if data is not None:
                 if get_covers and "album_mbid" in data:
-                    cu = CoverUpdater(data["album_mbid"],d)
+                    cu = CoverUpdater(data["album_mbid"],
+                                      d,
+                                     update_notifier=notifier)
                     executor.submit(cu.run)
                 
                 if artist_directory is not None and "albumArtist" in data:
@@ -61,12 +77,14 @@ def process_directory(directory,
                     au=ArtistUpdater(name=data["albumArtist"],
                                      mbid=mbid,
                                      directory=artist_directory,
-                                     max_dim=500)
+                                     max_dim=500,
+                                     update_notifier=notifier)
                     executor.submit(au.run)
                     
             if data != {} and update_music_files:
                 tagging.writeback_album_data(d, data)
-            
+                
+
 
 if __name__ == '__main__':
     
@@ -75,32 +93,41 @@ if __name__ == '__main__':
     update_music_files = False
     get_covers = False
     artist_directory=None
+    retcode=False
     
-    if len(sys.argv) > 1:
-        if "-v" in sys.argv:
-            logging.basicConfig(format='%(levelname)s: %(name)s - %(message)s',
-                                level=logging.DEBUG)
-            loggingconf=True
-            logging.info("enabled verbose logging")
-        else:
-            logging.basicConfig(format='%(levelname)s: %(name)s - %(message)s',
-                        level=logging.INFO)
-            
-        if "-u" in sys.argv:
-            logging.info("writing back album information to music files")
-            update_music_files = True
-            
-        if "-c" in sys.argv:
-            logging.info("retrieving covers from web services")
-            get_covers = True
-            
-        if "-a" in sys.argv:
-            logging.info("retrieving artist pictures from web services")
-            artist_directory="/data/library/artists"
-            
-        for a in sys.argv:
-            if Path(a).is_dir():
-                directory=a
+    if "-v" in sys.argv:
+        logging.basicConfig(format='%(levelname)s: %(name)s - %(message)s',
+                            level=logging.DEBUG)
+        loggingconf=True
+        logging.info("enabled verbose logging")
+        sys.argv.remove("-x")
+    else:
+        logging.basicConfig(format='%(levelname)s: %(name)s - %(message)s',
+                    level=logging.INFO)
+
+    if "-u" in sys.argv:
+        logging.info("writing back album information to music files")
+        update_music_files = True
+        sys.argv.remove("-u")
+        
+    if "-c" in sys.argv:
+        logging.info("retrieving covers from web services")
+        get_covers = True
+        sys.argv.remove("-c")
+        
+    if "-a" in sys.argv:
+        logging.info("retrieving artist pictures from web services")
+        artist_directory="/data/library/artists"
+        sys.argv.remove("-a")
+        
+    if "-x" in sys.argv:
+        logging.info("return code 0 only if new covers were found")
+        retcode=True
+        sys.argv.remove("-x")
+
+    for a in sys.argv:
+        if Path(a).is_dir():
+            directory=a
                 
     p=Path(directory).absolute()
     logging.info("Extracting album information from %s",p)
@@ -108,4 +135,15 @@ if __name__ == '__main__':
                       update_music_files=update_music_files, 
                       get_covers=get_covers,
                       artist_directory=artist_directory)
+    
+    executor.shutdown(wait=True)
+    
+    if notifier.received_notifies():
+        logging.info("Downloaded %s files", notifier.notifies)
+        sys.exit(0)
+    else:
+        if retcode:
+            sys.exit(1)
+        else:
+            sys.exit(0)
     

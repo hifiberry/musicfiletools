@@ -34,10 +34,11 @@ MIN_HEIGHT = 150
 
 class CoverUpdater(Thread):
     
-    def __init__(self, mbid, directory):
+    def __init__(self, mbid, directory, update_notifier=None):
         super().__init__()
         self.mbid = mbid
         self.directory = directory
+        self.update_notifier = update_notifier
     
     def run(self):
         logging.debug("retrieving cover data for %s, storing to %s",
@@ -113,6 +114,8 @@ class CoverUpdater(Thread):
         with open(cp,"wb") as coverfile:
             coverfile.write(data)
             logging.info("created %s (%sx%s)", cp, width, height)
+            if self.update_notifier is not None:
+                self.update_notifier.notify_updated()
                 
         return True
             
