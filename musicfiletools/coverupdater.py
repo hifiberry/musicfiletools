@@ -34,11 +34,12 @@ MIN_HEIGHT = 150
 
 class CoverUpdater(Thread):
     
-    def __init__(self, mbid, directory, update_notifier=None):
+    def __init__(self, mbid, directory, update_notifier=None, allow_overwrite=False):
         super().__init__()
         self.mbid = mbid
         self.directory = directory
         self.update_notifier = update_notifier
+        self.allow_overwrite = allow_overwrite
     
     def run(self):
         logging.debug("retrieving cover data for %s, storing to %s",
@@ -51,6 +52,10 @@ class CoverUpdater(Thread):
         for f in ["cover.jpg","cover.png"]:
             coverfile=Path(self.directory,f)
             if coverfile.exists():
+                if not(self.allow_overwrite):
+                    logging.debug("%s exists already",coverfile)
+                    return
+                
                 with open(coverfile,"rb") as c:
                     _type, w, h = get_image_info(c.read())
                     if w >= GOOD_ENOUGH_WIDTH and h >= GOOD_ENOUGH_HEIGHT:
