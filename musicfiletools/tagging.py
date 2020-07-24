@@ -263,6 +263,10 @@ def albumdata_from_dir(directory, use_only_json=False):
     except:
         if not(use_only_json):
             files = music_files(directory)
+            
+            if len(files)==0:
+                return {}
+            
             if Path(directory,"noalbum").exists():
                 logging.debug("noalbum file exists, skipping")
                 return {}
