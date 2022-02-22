@@ -22,7 +22,6 @@ SOFTWARE.
 
 import musicbrainzngs
 import logging
-from Cryptodome.SelfTest.Signature.test_dss import res
 
 musicbrainzngs.set_useragent("hifiberry tagger","2020")
 musicbrainzngs.set_hostname("musicbrainz.hifiberry.com")
